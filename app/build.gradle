@@ -41,4 +41,5 @@ dependencies {
 
     def uploadServiceVersion = "4.2.0"
     implementation "net.gotev:uploadservice:$uploadServiceVersion"
+    implementation 'androidx.documentfile:documentfile:1.0.1'
 }

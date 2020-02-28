@@ -15,29 +15,30 @@
         tools:context=".MainActivity">
 
         <Button
-            android:id="@+id/button"
-            android:layout_width="wrap_content"
+            android:id="@+id/pickButton"
+            android:layout_width="158dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginEnd="8dp"
+            android:layout_marginStart="32dp"
+            android:layout_marginEnd="16dp"
             android:layout_marginBottom="8dp"
             android:onClick="@{PhotoHandler::onClickSelectPhoto}"
             android:text="@string/choose_file_button"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/takeButton"
             app:layout_constraintStart_toStartOf="parent" />
 
         <Button
-            android:id="@+id/button3"
-            android:layout_width="wrap_content"
+            android:id="@+id/takeButton"
+            android:layout_width="166dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginEnd="8dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="32dp"
             android:layout_marginBottom="8dp"
             android:text="@string/take_photo_button"
-            app:layout_constraintBottom_toTopOf="@+id/button"
+            android:onClick="@{PhotoHandler::onClickTakePhoto}"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent" />
+            app:layout_constraintStart_toEndOf="@+id/pickButton" />
 
         <ImageView
             android:id="@+id/imageView2"
@@ -47,11 +48,26 @@
             android:layout_marginTop="8dp"
             android:layout_marginEnd="8dp"
             android:layout_marginBottom="8dp"
-            app:layout_constraintBottom_toTopOf="@+id/button3"
+            app:layout_constraintBottom_toTopOf="@+id/uploadButton"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:srcCompat="?android:attr/activatedBackgroundIndicator" />
+
+        <Button
+            android:id="@+id/uploadButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="16dp"
+            android:clickable="false"
+            android:enabled="false"
+            android:text="@string/upload_button"
+            android:onClick="@{PhotoHandler::onClickUpload}"
+            app:layout_constraintBottom_toTopOf="@+id/pickButton"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

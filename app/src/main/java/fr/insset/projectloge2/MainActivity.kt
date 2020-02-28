@@ -30,11 +30,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun pickFile() {
-        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            type = "image/*"
-        }
-        startActivityForResult(intent, photoChoosePicker)
+        val i = Intent(Intent.ACTION_PICK)
+        i.type = "image/*"
+        val mimeTypes = arrayOf("image/jpeg", "image/png")
+        i.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes)
+        startActivityForResult(i, photoChoosePicker)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

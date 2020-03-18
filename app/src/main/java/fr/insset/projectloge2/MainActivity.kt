@@ -9,31 +9,27 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
-import android.location.LocationProvider
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
+import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
 import android.view.View
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.core.app.ActivityCompat.requestPermissions
 import androidx.core.content.FileProvider
 import androidx.databinding.DataBindingUtil
+import com.google.android.gms.location.*
 import fr.insset.projectloge2.databinding.ActivityMainBinding
 import net.gotev.uploadservice.protocols.multipart.MultipartUploadRequest
 import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.collections.ArrayList
 
 
 class MainActivity : AppCompatActivity() {
-
-
 
     inner class PhotoHandler {
         fun onClickSelectPhoto(v: View) {
@@ -51,73 +47,46 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         const val photoChoosePicker = 1002
-        const val photoCameraAction = 1001
-        const val locationPermission = 2001
-        const val oneMinute: Long = 60000
     }
 
-    private lateinit var layout: ActivityMainBinding;
-    private lateinit var photoHandler: PhotoHandler;
-    private var pictureUrl = "";
-    private lateinit var locationManager: LocationManager;
-    private val providers : ArrayList<LocationProvider> = ArrayList<LocationProvider>()
-    private var location : Location? = null
+    private lateinit var layout: ActivityMainBinding
+    private lateinit var photoHandler: PhotoHandler
+    private var pictureUrl = ""
+
+    private lateinit var locationCallback: LocationCallback
+    private lateinit var locationRequest: LocationRequest
+    private var requestingLocationUpdates: Boolean = true
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var locationManager: LocationManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        layout = DataBindingUtil.setContentView(this, R.layout.activity_main);
-        photoHandler = PhotoHandler();
-        layout.photoHandler = photoHandler;
+        layout = DataBindingUtil.setContentView(this, R.layout.activity_main)
+        photoHandler = PhotoHandler()
+        layout.photoHandler = photoHandler
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        initGeoloc()
-    }
-
-    fun initGeoloc() {
-        val names = locationManager.getProviders(true)
-
-        for (name : String in names) {
-            providers.add(locationManager.getProvider(name)!!)
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        locationRequest = LocationRequest.create();
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult?) {
+                locationResult ?: return
+                for (location in locationResult.locations){
+                    // Update UI with location data
+                    // ...
+                }
+            }
         }
-
-        initRequestLocationUpdate()
     }
 
-    fun initRequestLocationUpdate() {
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            askForPermission()
-            return
-        }
-
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, oneMinute, 150.0f, object: LocationListener {
-            override fun onLocationChanged(location: Location?) {
-                this@MainActivity.location = location
-            }
-
-            override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
-
-            }
-
-            override fun onProviderEnabled(provider: String?) {
-
-            }
-
-            override fun onProviderDisabled(provider: String?) {
-
-            }
-
-        })
+    override fun onResume() {
+        super.onResume()
+        if (requestingLocationUpdates) startLocationUpdates()
     }
 
-    fun askForPermission() {
-        ActivityCompat.requestPermissions(this,
-            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION), locationPermission);
+    private fun startLocationUpdates() {
+        fusedLocationClient.requestLocationUpdates(locationRequest,
+            locationCallback,
+            Looper.getMainLooper())
     }
 
     fun pickPhoto() {
@@ -129,7 +98,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun takePhoto() {
-        val i = Intent(MediaStore.ACTION_IMAGE_CAPTURE).also { takePictureIntent ->
+        Intent(MediaStore.ACTION_IMAGE_CAPTURE).also { takePictureIntent ->
             takePictureIntent.resolveActivity(packageManager)?.also {
                 val photoFile: File? = try {
                     createImageFile()
@@ -149,19 +118,69 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun getLocation(): Location? {
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            askForPermission()
-            return locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+    private fun getLastKnownLocation(): Location? {
+        val providers: List<String> = locationManager.getProviders(true)
+        var bestLocation: Location? = null
+        for (provider in providers) {
+            if (ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                return null;
+            }
+            val l: Location? = locationManager.getLastKnownLocation(provider)
+            Log.d("TAG", String.format("last known location, provider: %s, location: %s", provider,l))
+            if (l == null) {
+                continue
+            }
+            if (bestLocation == null
+                || l.accuracy < bestLocation.accuracy
+            ) {
+                Log.d("TAG", String.format("found best last known location: %s", l))
+                bestLocation = l
+            }
         }
-        return locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+        return bestLocation
+    }
+
+    private fun findLocation(c: Context) {
+        Log.d("Find Location", "in findLocation")
+        val providers: List<String>  = locationManager.getProviders(true)
+        for (provider: String in providers) {
+            if (ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                return
+            }
+            locationManager.requestLocationUpdates(provider, 60000, 150.0f, object:
+                LocationListener {
+                override fun onLocationChanged(location: Location?) {
+
+                }
+
+                override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
+
+                }
+
+                override fun onProviderEnabled(provider: String?) {
+
+                }
+
+                override fun onProviderDisabled(provider: String?) {
+
+                }
+
+            })
+        }
     }
 
     private fun galleryAddPic() {
@@ -179,11 +198,9 @@ class MainActivity : AppCompatActivity() {
                     pictureUrl = it.data.toString()
                     layout.uploadButton.isEnabled = true
                     layout.uploadButton.isClickable = true
-                    val tt = getLocation()
-                    Log.d("LOCATION!!!!!", String.format("%s", tt?.longitude))
+                    getLastKnownLocation().also { location: Location? ->
+                        Log.d("TAG", String.format("%d, %d", location!!.latitude, location.longitude)) }
                 }
-            } else if(requestCode == locationPermission){
-                initRequestLocationUpdate()
             } else {
                 super.onActivityResult(requestCode, resultCode, data)
             }

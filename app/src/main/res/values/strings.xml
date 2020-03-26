@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">ProjectLoge2</string>
+    <string name="app_name">Wild Tortoise</string>
     <string name="choose_file_button">Choisir une photo</string>
     <string name="take_photo_button">Prendre une photo</string>
     <string name="upload_button">Téléverser</string>

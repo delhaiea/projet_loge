@@ -47,6 +47,7 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         const val photoChoosePicker = 1002
+        const val serverAddress = "https://wildtortoise-api.appspot.com"
     }
 
     private lateinit var layout: ActivityMainBinding
@@ -199,7 +200,7 @@ class MainActivity : AppCompatActivity() {
                     layout.uploadButton.isEnabled = true
                     layout.uploadButton.isClickable = true
                     getLastKnownLocation().also { location: Location? ->
-                        Log.d("TAG", String.format("%d, %d", location!!.latitude, location.longitude)) }
+                        Log.d("TAG", String.format("%d, %d", location?.latitude, location?.longitude)) }
                 }
             } else {
                 super.onActivityResult(requestCode, resultCode, data)
@@ -225,7 +226,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun upload() {
         if (pictureUrl.isNotEmpty()) {
-            MultipartUploadRequest(this, serverUrl = "https://ptsv2.com/t/ji5a9-1582895613/post")
+            MultipartUploadRequest(this, serverUrl = String.format("%s/photo", serverAddress))
                 .setMethod("POST")
                 .addFileToUpload(
                     filePath = pictureUrl,

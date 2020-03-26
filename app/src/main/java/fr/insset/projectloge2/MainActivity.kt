@@ -14,10 +14,8 @@ import android.os.Bundle
 import android.os.Environment
 import android.os.Looper
 import android.provider.MediaStore
-import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import androidx.core.content.FileProvider
 import androidx.databinding.DataBindingUtil
 import com.google.android.gms.location.*
@@ -27,9 +25,15 @@ import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 
 class MainActivity : AppCompatActivity() {
+
+    private var periodicNotificationRequest = PeriodicWorkRequest.Builder(
+        NotificationWorker::class.java, 15, TimeUnit.MINUTES
+    ).build()
+
 
     inner class PhotoHandler {
         fun onClickSelectPhoto(v: View) {
@@ -40,7 +44,7 @@ class MainActivity : AppCompatActivity() {
             upload()
         }
 
-        fun onClickTakePhoto(c: View) {
+        fun onClickTakePhoto(v: View) {
             takePhoto()
         }
     }
@@ -62,6 +66,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        layout = DataBindingUtil.setContentView(this, R.layout.activity_main);
+        photoHandler = PhotoHandler();
+        layout.photoHandler = photoHandler;
+
+        callNotificationWorker()
         layout = DataBindingUtil.setContentView(this, R.layout.activity_main)
         photoHandler = PhotoHandler()
         layout.photoHandler = photoHandler
@@ -77,6 +86,8 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+
+        callNotificationWorker()
     }
 
     override fun onResume() {
@@ -191,6 +202,7 @@ class MainActivity : AppCompatActivity() {
             sendBroadcast(mediaScanIntent)
         }
     }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (resultCode == Activity.RESULT_OK) {
             if (requestCode == photoChoosePicker) {
@@ -233,5 +245,17 @@ class MainActivity : AppCompatActivity() {
                     parameterName = "photo"
                 ).startUpload()
         }
+    }
+
+    private fun callNotificationWorker(){
+        /*
+        * will create a unique request to send a notification at the start of the activity
+        * This will create a notification when we launch the application which is intended
+        * */
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "periodicNotification",
+            ExistingPeriodicWorkPolicy.KEEP,
+            periodicNotificationRequest
+        )
     }
 }

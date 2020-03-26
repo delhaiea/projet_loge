@@ -5,7 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
-import androidx.core.content.ContextCompat.getSystemService
+import net.gotev.uploadservice.BuildConfig
 import net.gotev.uploadservice.UploadServiceConfig
 
 class App : Application() {
@@ -15,26 +15,39 @@ class App : Application() {
         // but you have to always specify it even if targeting lower versions, because it's handled
         // by AndroidX AppCompat library automatically
         const val notificationChannelID = "TestChannel"
+        const val photoNotificationChannel = "channel1"
     }
 
     // Customize the notification channel as you wish. This is only for a bare minimum example
-    private fun createNotificationChannel() {
+    private fun createNotificationChannels() {
         if (Build.VERSION.SDK_INT >= 26) {
-            val channel = NotificationChannel(
+            //channel used by upload service
+            val uploadChannel = NotificationChannel(
                 notificationChannelID,
                 "TestApp Channel",
                 NotificationManager.IMPORTANCE_LOW
             )
+
+            //channel used by photo notification
+            val photoNotificationChannel = NotificationChannel(
+                photoNotificationChannel,
+                "Photo Notification",
+                NotificationManager.IMPORTANCE_HIGH
+            )
+            photoNotificationChannel.description =
+                "Some simple description, no really, just a simple test."
+
             val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            manager.createNotificationChannel(channel)
+
+            val channels = listOf(uploadChannel, photoNotificationChannel)
+            manager.createNotificationChannels(channels)
         }
     }
 
     override fun onCreate() {
         super.onCreate()
 
-        createNotificationChannel()
-
+        createNotificationChannels()
         UploadServiceConfig.initialize(
             context = this,
             defaultNotificationChannel = notificationChannelID,

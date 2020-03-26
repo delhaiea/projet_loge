@@ -14,10 +14,15 @@ import android.os.Bundle
 import android.os.Environment
 import android.os.Looper
 import android.provider.MediaStore
+import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.core.content.FileProvider
 import androidx.databinding.DataBindingUtil
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequest
+import androidx.work.WorkManager
 import com.google.android.gms.location.*
 import fr.insset.projectloge2.databinding.ActivityMainBinding
 import net.gotev.uploadservice.protocols.multipart.MultipartUploadRequest
